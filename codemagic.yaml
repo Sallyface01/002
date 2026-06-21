@@ -4,22 +4,20 @@ workflows:
     max_build_duration: 60
     environment:
       java: 17
+      android_sdk: 35
     scripts:
       - name: Fix Gradle Wrapper
         script: |
           # Ensure exec permission (sometimes lost from Windows git)
           chmod +x gradlew
 
-          # Validate wrapper jar; if corrupted by git, download a fresh one
-          if ! jar tf gradle/wrapper/gradle-wrapper.jar > /dev/null 2>&1; then
-            echo ">> gradle-wrapper.jar is corrupted, downloading fresh copy..."
-            curl -sSL "https://services.gradle.org/distributions/gradle-8.9-bin.zip" -o /tmp/gradle.zip
-            unzip -qo /tmp/gradle.zip "gradle-8.9/lib/gradle-wrapper-8.9.jar" -d /tmp/gradle-extract/
-            cp /tmp/gradle-extract/gradle-8.9/lib/gradle-wrapper-8.9.jar gradle/wrapper/gradle-wrapper.jar
-            echo ">> gradle-wrapper.jar replaced OK"
-          else
-            echo ">> gradle-wrapper.jar is valid"
-          fi
+          # Always replace wrapper jar — repo copy is likely corrupted by git CRLF conversion
+          echo ">> Replacing gradle-wrapper.jar with a fresh copy..."
+          curl -sSL "https://services.gradle.org/distributions/gradle-8.9-bin.zip" -o /tmp/gradle-8.9.zip
+          unzip -qo /tmp/gradle-8.9.zip "*/gradle-wrapper*.jar" -d /tmp/gradle-extract/
+          WRAPPER_JAR=$(find /tmp/gradle-extract -name "gradle-wrapper*.jar" | head -1)
+          cp "$WRAPPER_JAR" gradle/wrapper/gradle-wrapper.jar
+          echo ">> gradle-wrapper.jar replaced OK ($(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes)"
       - name: Build Debug APK
         script: |
           ./gradlew assembleDebug
