@@ -1,0 +1,11 @@
+workflows:
+  android-workflow:
+    name: Android APK Build
+    scripts:
+      - name: 授予gradlew执行权限
+        script: chmod +x gradlew
+      - name: 编译Debug APK
+        script: chmod +x gradlew
+            ./gradlew assembleDebug
+    artifacts:
+      - app/build/outputs/apk/debug/app-debug.apk
